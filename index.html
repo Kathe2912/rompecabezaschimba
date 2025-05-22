@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jigsaw Puzzle</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <img src="imagenes/ficha.jpeg" alt="" style="height: 500px; height: 500px;">
+  <style>
+    /* principal*/
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #f8f9fa;
+      margin: 20px;
+    }
+    h1 {
+      color: #007bff;
+    }
+
+    /* controles */
+    .game-controls {
+      margin: 20px auto;
+      padding: 15px;
+      background: #e9ecef;
+      border-radius: 8px;
+      max-width: 600px;
+    }
+    .stat-item {
+      margin: 5px 10px;
+      font-weight: bold;
+    }
+
+    /* Puzzle contenedor */
+    #puzzle-container {
+      border: 3px solid #007bff;
+      background: #fff;
+      margin: 20px auto;
+      position: relative;
+      aspect-ratio: 4/3;
+      max-width: 90vw;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Puzzle piezas de estilo */
+    .puzzle-piece {
+      position: absolute;
+      background-size: cover;
+      background-repeat: no-repeat;
+      cursor: grab;
+      transition: transform 0.1s ease;
+      filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.4));
+    }
+    .puzzle-piece.dragging {
+      z-index: 100;
+      transform: scale(1.05);
+      filter: drop-shadow(0 0 10px #007bff);
+    }
+    .puzzle-piece.placed {
+      cursor: default;
+      filter: drop-shadow(0 0 6px #28a745);
+    }
+  </style>
+</head>
+<body>
+  <!-- titulo -->
+  <h1>Rompecabezas chimba</h1>
+
+  <!-- Controles -->
+  <div class="game-controls">
+    <div class="mb-2">
+      <label for="difficultySelect">Dificultad:</label>
+      <select id="difficultySelect" class="form-select d-inline-block w-auto">
+        <option value="3">Fácil (3x3)</option>
+        <option value="4" selected>Normal (4x4)</option>
+        <option value="5">Difícil (5x5)</option>
+      </select>
+      <button id="startButton" class="btn btn-primary ms-2">Iniciar</button>
+    </div>
+    <div>
+      <span class="stat-item">Tiempo: <span id="timerDisplay">00:00</span></span>
+      <span class="stat-item">Movimientos: <span id="movesDisplay">0</span></span>
+    </div>
+  </div>
+
+  <!-- Puzzle Area -->
+  <div id="puzzle-container"></div>
+
+  <!-- Bootstrap Script -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Main Script -->
+  <script>
+    const container = document.getElementById("puzzle-container");
+    const startBtn = document.getElementById("startButton");
+    const difficulty = document.getElementById("difficultySelect");
+    const timerDisplay = document.getElementById("timerDisplay");
+    const movesDisplay = document.getElementById("movesDisplay");
+
+    let pieces = [], timer, seconds = 0, moves = 0;
+
+    // Start Puzzle
+    startBtn.onclick = () => {
+      let size = +difficulty.value;
+      seconds = 0; moves = 0;
+      timerDisplay.textContent = "00:00";
+      movesDisplay.textContent = "0";
+      clearInterval(timer);
+      timer = setInterval(() => {
+        seconds++;
+        timerDisplay.textContent = `${String(seconds / 60 | 0).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+      }, 1000);
+      createPuzzle(size);
+    };
+
+    // creacion de piezas
+    function createPuzzle(n) {
+      container.innerHTML = "";
+      pieces = [];
+      let imgUrl = "imagenes/ficha.jpeg"; 
+      let w = container.clientWidth, h = w / 4 * 3;
+      container.style.height = `${h}px`;
+      let pw = w / n, ph = h / n;
+
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          let piece = document.createElement("div");
+          piece.className = "puzzle-piece";
+          piece.style.width = `${pw}px`;
+          piece.style.height = `${ph}px`;
+          piece.style.backgroundImage = `url(${imgUrl})`;
+          piece.style.backgroundSize = `${w}px ${h}px`;
+          piece.style.backgroundPosition = `-${c * pw}px -${r * ph}px`;
+          piece.dataset.correctX = c * pw;
+          piece.dataset.correctY = r * ph;
+          piece.isPlaced = false;
+          randomize(piece, w, h, pw, ph);
+          container.appendChild(piece);
+          pieces.push(piece);
+        }
+      }
+    }
+
+    // Colocar pieza al azar
+    function randomize(piece, w, h, pw, ph) {
+      let x = Math.random() * (w - pw), y = Math.random() * (h - ph);
+      piece.style.left = `${x}px`;
+      piece.style.top = `${y}px`;
+      piece.onmousedown = dragStart;
+      piece.ontouchstart = dragStart;
+    }
+
+    // Lógica de arrastre
+    let active, offsetX, offsetY;
+    function dragStart(e) {
+      active = e.target;
+      active.classList.add("dragging");
+      let rect = active.getBoundingClientRect();
+      let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      offsetX = clientX - rect.left;
+      offsetY = clientY - rect.top;
+
+      document.onmousemove = drag;
+      document.onmouseup = drop;
+      document.ontouchmove = drag;
+      document.ontouchend = drop;
+    }
+
+    function drag(e) {
+      if (!active) return;
+      let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      let rect = container.getBoundingClientRect();
+      active.style.left = `${clientX - rect.left - offsetX}px`;
+      active.style.top = `${clientY - rect.top - offsetY}px`;
+    }
+
+    function drop() {
+      if (!active) return;
+      active.classList.remove("dragging");
+      moves++;
+      movesDisplay.textContent = moves;
+
+      let x = parseFloat(active.style.left), y = parseFloat(active.style.top);
+      let cx = +active.dataset.correctX, cy = +active.dataset.correctY;
+      let threshold = 20;
+      if (Math.abs(x - cx) < threshold && Math.abs(y - cy) < threshold) {
+        active.style.left = `${cx}px`;
+        active.style.top = `${cy}px`;
+        active.classList.add("placed");
+        active.onmousedown = null;
+        active.ontouchstart = null;
+        active.isPlaced = true;
+      }
+
+      active = null;
+      document.onmousemove = document.onmouseup = null;
+      document.ontouchmove = document.ontouchend = null;
+
+      // Condición
+      if (pieces.every(p => p.isPlaced)) {
+        clearInterval(timer);
+        setTimeout(() => alert(`¡Completado en ${timerDisplay.textContent} y ${moves} movimientos!`), 100);
+      }
+    }
+  </script>
+</body>
+</html>
