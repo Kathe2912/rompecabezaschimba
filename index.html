@@ -3,26 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Jigsaw Puzzle</title>
+  <title>Rompecabezas chimba</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <img src="imagenes/ficha.jpeg" alt="" style="height: 500px; height: 500px;">
   <style>
     /* principal*/
     body {
-      font-family: sans-serif;
+      font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
       text-align: center;
-      background: #f8f9fa;
+      background: #e0d6aa;
       margin: 20px;
     }
     h1 {
-      color: #007bff;
+      color: #a5661e;
     }
 
     /* controles */
     .game-controls {
       margin: 20px auto;
       padding: 15px;
-      background: #e9ecef;
+      background: #9b8340;
       border-radius: 8px;
       max-width: 600px;
     }
@@ -33,6 +32,8 @@
 
     /* Puzzle contenedor */
     #puzzle-container {
+      height: 700px;
+      width: 800px;
       border: 3px solid #007bff;
       background: #fff;
       margin: 20px auto;
@@ -64,17 +65,26 @@
 </head>
 <body>
   <!-- titulo -->
-  <h1>Rompecabezas chimba</h1>
+  <h1>Rompecabezas chimba</h1> 
+
 
   <!-- Controles -->
   <div class="game-controls">
     <div class="mb-2">
-      <label for="difficultySelect">Dificultad:</label>
+      <label for="imageSelect">Imagen:</label>
+      <select id="imageSelect" class="form-select d-inline-block w-auto">
+        <option value="imagenes/ficha.jpeg">Imagen 1</option>
+        <option value="imagenes/ficha2.jpg">Imagen 2</option>
+        <option value="imagenes/ficha3.jpg">Imagen 3</option>
+      </select>
+
+      <label for="difficultySelect" class="ms-3">Dificultad:</label>
       <select id="difficultySelect" class="form-select d-inline-block w-auto">
         <option value="3">Fácil (3x3)</option>
         <option value="4" selected>Normal (4x4)</option>
         <option value="5">Difícil (5x5)</option>
       </select>
+
       <button id="startButton" class="btn btn-primary ms-2">Iniciar</button>
     </div>
     <div>
@@ -82,6 +92,10 @@
       <span class="stat-item">Movimientos: <span id="movesDisplay">0</span></span>
     </div>
   </div>
+  
+<img src="imagenes/ficha.jpeg" alt="" height="100px; height: 100px;"> 
+<img src="imagenes/ficha2.jpg" alt="" height="100px; height: 100px;">
+<img src="imagenes/ficha3.jpg" alt="" height="100px; height: 100px;">
 
   <!-- Puzzle Area -->
   <div id="puzzle-container"></div>
@@ -94,6 +108,7 @@
     const container = document.getElementById("puzzle-container");
     const startBtn = document.getElementById("startButton");
     const difficulty = document.getElementById("difficultySelect");
+    const imageSelect = document.getElementById("imageSelect");
     const timerDisplay = document.getElementById("timerDisplay");
     const movesDisplay = document.getElementById("movesDisplay");
 
@@ -102,6 +117,7 @@
     // Start Puzzle
     startBtn.onclick = () => {
       let size = +difficulty.value;
+      let imgUrl = imageSelect.value;
       seconds = 0; moves = 0;
       timerDisplay.textContent = "00:00";
       movesDisplay.textContent = "0";
@@ -110,16 +126,22 @@
         seconds++;
         timerDisplay.textContent = `${String(seconds / 60 | 0).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
       }, 1000);
-      createPuzzle(size);
+
+      const img = new Image();
+      img.src = imgUrl;
+      img.onload = () => createPuzzle(size, imgUrl);
     };
 
-    // creacion de piezas
-    function createPuzzle(n) {
+    function createPuzzle(n, imgUrl) {
       container.innerHTML = "";
       pieces = [];
-      let imgUrl = "imagenes/ficha.jpeg"; 
-      let w = container.clientWidth, h = w / 4 * 3;
+
+      // Asegura el ancho para calcular bien el alto
+      container.style.width = container.offsetWidth + "px";
+      let w = container.clientWidth;
+      let h = w / 4 * 3;
       container.style.height = `${h}px`;
+
       let pw = w / n, ph = h / n;
 
       for (let r = 0; r < n; r++) {
@@ -143,7 +165,8 @@
 
     // Colocar pieza al azar
     function randomize(piece, w, h, pw, ph) {
-      let x = Math.random() * (w - pw), y = Math.random() * (h - ph);
+      let x = Math.random() * (w - pw);
+      let y = Math.random() * (h - ph);
       piece.style.left = `${x}px`;
       piece.style.top = `${y}px`;
       piece.onmousedown = dragStart;
@@ -182,8 +205,10 @@
       moves++;
       movesDisplay.textContent = moves;
 
-      let x = parseFloat(active.style.left), y = parseFloat(active.style.top);
-      let cx = +active.dataset.correctX, cy = +active.dataset.correctY;
+      let x = parseFloat(active.style.left);
+      let y = parseFloat(active.style.top);
+      let cx = +active.dataset.correctX;
+      let cy = +active.dataset.correctY;
       let threshold = 20;
       if (Math.abs(x - cx) < threshold && Math.abs(y - cy) < threshold) {
         active.style.left = `${cx}px`;
