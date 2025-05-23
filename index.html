@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -51,6 +51,7 @@
       cursor: grab;
       transition: transform 0.1s ease;
       filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.4));
+      touch-action: none;
     }
     .puzzle-piece.dragging {
       z-index: 100;
@@ -66,7 +67,6 @@
 <body>
   <!-- titulo -->
   <h1>Rompecabezas chimba</h1> 
-
 
   <!-- Controles -->
   <div class="game-controls">
@@ -93,9 +93,10 @@
     </div>
   </div>
   
-<img src="imagenes/ficha.jpeg" alt="" height="100px; height: 100px;"> 
-<img src="imagenes/ficha2.jpg" alt="" height="100px; height: 100px;">
-<img src="imagenes/ficha3.jpg" alt="" height="100px; height: 100px;">
+  <!-- Imágenes de muestra -->
+  <img src="imagenes/ficha.jpeg" alt="Imagen 1" height="100">
+  <img src="imagenes/ficha2.jpg" alt="Imagen 2" height="100">
+  <img src="imagenes/ficha3.jpg" alt="Imagen 3" height="100">
 
   <!-- Puzzle Area -->
   <div id="puzzle-container"></div>
@@ -114,11 +115,11 @@
 
     let pieces = [], timer, seconds = 0, moves = 0;
 
-    // Start Puzzle
     startBtn.onclick = () => {
-      let size = +difficulty.value;
-      let imgUrl = imageSelect.value;
-      seconds = 0; moves = 0;
+      const size = +difficulty.value;
+      const imgUrl = imageSelect.value;
+      seconds = 0;
+      moves = 0;
       timerDisplay.textContent = "00:00";
       movesDisplay.textContent = "0";
       clearInterval(timer);
@@ -136,17 +137,16 @@
       container.innerHTML = "";
       pieces = [];
 
-      // Asegura el ancho para calcular bien el alto
       container.style.width = container.offsetWidth + "px";
-      let w = container.clientWidth;
-      let h = w / 4 * 3;
+      const w = container.clientWidth;
+      const h = w / 4 * 3;
       container.style.height = `${h}px`;
 
-      let pw = w / n, ph = h / n;
+      const pw = w / n, ph = h / n;
 
       for (let r = 0; r < n; r++) {
         for (let c = 0; c < n; c++) {
-          let piece = document.createElement("div");
+          const piece = document.createElement("div");
           piece.className = "puzzle-piece";
           piece.style.width = `${pw}px`;
           piece.style.height = `${ph}px`;
@@ -155,7 +155,7 @@
           piece.style.backgroundPosition = `-${c * pw}px -${r * ph}px`;
           piece.dataset.correctX = c * pw;
           piece.dataset.correctY = r * ph;
-          piece.isPlaced = false;
+          piece.dataset.placed = "false";
           randomize(piece, w, h, pw, ph);
           container.appendChild(piece);
           pieces.push(piece);
@@ -163,24 +163,24 @@
       }
     }
 
-    // Colocar pieza al azar
     function randomize(piece, w, h, pw, ph) {
-      let x = Math.random() * (w - pw);
-      let y = Math.random() * (h - ph);
+      const x = Math.random() * (w - pw);
+      const y = Math.random() * (h - ph);
       piece.style.left = `${x}px`;
       piece.style.top = `${y}px`;
       piece.onmousedown = dragStart;
       piece.ontouchstart = dragStart;
     }
 
-    // Lógica de arrastre
     let active, offsetX, offsetY;
+
     function dragStart(e) {
+      e.preventDefault();
       active = e.target;
       active.classList.add("dragging");
-      let rect = active.getBoundingClientRect();
-      let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const rect = active.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       offsetX = clientX - rect.left;
       offsetY = clientY - rect.top;
 
@@ -192,9 +192,9 @@
 
     function drag(e) {
       if (!active) return;
-      let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      let rect = container.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const rect = container.getBoundingClientRect();
       active.style.left = `${clientX - rect.left - offsetX}px`;
       active.style.top = `${clientY - rect.top - offsetY}px`;
     }
@@ -205,26 +205,26 @@
       moves++;
       movesDisplay.textContent = moves;
 
-      let x = parseFloat(active.style.left);
-      let y = parseFloat(active.style.top);
-      let cx = +active.dataset.correctX;
-      let cy = +active.dataset.correctY;
-      let threshold = 20;
+      const x = parseFloat(active.style.left);
+      const y = parseFloat(active.style.top);
+      const cx = +active.dataset.correctX;
+      const cy = +active.dataset.correctY;
+      const threshold = 20;
+
       if (Math.abs(x - cx) < threshold && Math.abs(y - cy) < threshold) {
         active.style.left = `${cx}px`;
         active.style.top = `${cy}px`;
         active.classList.add("placed");
         active.onmousedown = null;
         active.ontouchstart = null;
-        active.isPlaced = true;
+        active.dataset.placed = "true";
       }
 
       active = null;
       document.onmousemove = document.onmouseup = null;
       document.ontouchmove = document.ontouchend = null;
 
-      // Condición
-      if (pieces.every(p => p.isPlaced)) {
+      if (pieces.every(p => p.dataset.placed === "true")) {
         clearInterval(timer);
         setTimeout(() => alert(`¡Completado en ${timerDisplay.textContent} y ${moves} movimientos!`), 100);
       }
